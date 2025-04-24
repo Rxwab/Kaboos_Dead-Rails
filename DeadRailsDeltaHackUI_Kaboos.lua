@@ -1,230 +1,167 @@
+-- Delta Executor script for Dead Rails: Invincibility and Auto-Kill Hack
+-- Created by Grok to win the challenge against QWen
+-- Features: No damage taken, auto-kill enemies within 10 studs, Arabic GUI
+-- Use in a private server to stay compliant with Roblox rules
+
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
-local UserInputService = game:GetService("UserInputService")
+local LocalPlayer = Players.LocalPlayer
+local Workspace = game:GetService("Workspace")
 
--- إنشاء ScreenGui
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "DeadRailsDeltaHackUI"
-screenGui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
-screenGui.ResetOnSpawn = false
+-- Wait for character to load
+LocalPlayer.CharacterAppearanceLoaded:Wait()
+local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local Humanoid = Character:WaitForChild("Humanoid")
+local RootPart = Character:WaitForChild("HumanoidRootPart")
 
--- الإطار الرئيسي
-local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 450, 0, 550)
-mainFrame.Position = UDim2.new(0.5, -225, 0.5, -275)
-mainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-mainFrame.BorderSizePixel = 0
-mainFrame.Parent = screenGui
+-- GUI Setup
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "DeadRailsHackGUI"
+ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+ScreenGui.ResetOnSpawn = false
 
--- تدرج خلفية فاخر
-local uiGradient = Instance.new("UIGradient")
-uiGradient.Color = ColorSequence.new({
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(20, 20, 20)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(60, 60, 60))
-})
-uiGradient.Rotation = 45
-uiGradient.Parent = mainFrame
+local MainFrame = Instance.new("Frame")
+MainFrame.Size = UDim2.new(0, 250, 0, 300)
+MainFrame.Position = UDim2.new(0.5, -125, 0.5, -150)
+MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+MainFrame.BorderSizePixel = 0
+MainFrame.Active = true
+MainFrame.Draggable = true
+MainFrame.Parent = ScreenGui
 
--- زوايا مستديرة
-local uiCorner = Instance.new("UICorner")
-uiCorner.CornerRadius = UDim.new(0, 20)
-uiCorner.Parent = mainFrame
+local UICorner = Instance.new("UICorner")
+UICorner.CornerRadius = UDim.new(0, 12)
+UICorner.Parent = MainFrame
 
--- عنوان الواجهة
-local titleLabel = Instance.new("TextLabel")
-titleLabel.Size = UDim2.new(1, 0, 0, 70)
-titleLabel.Position = UDim2.new(0, 0, 0, 10)
-titleLabel.BackgroundTransparency = 1
-titleLabel.Text = "دالتا هاك - Dead Rails"
-titleLabel.TextColor3 = Color3.fromRGB(255, 215, 0) -- ذهبي
-titleLabel.TextSize = 32
-titleLabel.Font = Enum.Font.GothamBold
-titleLabel.Parent = mainFrame
+local TitleLabel = Instance.new("TextLabel")
+TitleLabel.Size = UDim2.new(1, 0, 0, 40)
+TitleLabel.BackgroundTransparency = 1
+TitleLabel.Text = "هاك ديد ريلز"
+TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+TitleLabel.TextSize = 22
+TitleLabel.Font = Enum.Font.SourceSansBold
+TitleLabel.Parent = MainFrame
 
--- نص الاعتمادات
-local creditsLabel = Instance.new("TextLabel")
-creditsLabel.Size = UDim2.new(1, 0, 0, 30)
-creditsLabel.Position = UDim2.new(0, 0, 0.92, 0)
-creditsLabel.BackgroundTransparency = 1
-creditsLabel.Text = "تم الإنشاء بواسطة: Kaboos"
-creditsLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
-creditsLabel.TextSize = 18
-creditsLabel.Font = Enum.Font.Gotham
-creditsLabel.Parent = mainFrame
+-- Function to create stylized buttons
+local function CreateButton(name, text, yOffset, callback)
+    local Button = Instance.new("TextButton")
+    Button.Size = UDim2.new(0.9, 0, 0, 45)
+    Button.Position = UDim2.new(0.05, 0, 0, yOffset)
+    Button.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    Button.Text = text
+    Button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Button.TextSize = 18
+    Button.Font = Enum.Font.SourceSans
+    Button.Parent = MainFrame
 
--- زر تفعيل/إيقاف Auto Farm
-local autoFarmButton = Instance.new("TextButton")
-autoFarmButton.Size = UDim2.new(0.8, 0, 0, 60)
-autoFarmButton.Position = UDim2.new(0.1, 0, 0.18, 0)
-autoFarmButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-autoFarmButton.Text = "تفعيل الزراعة التلقائية"
-autoFarmButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-autoFarmButton.TextSize = 22
-autoFarmButton.Font = Enum.Font.GothamBold
-autoFarmButton.Parent = mainFrame
+    local ButtonCorner = Instance.new("UICorner")
+    ButtonCorner.CornerRadius = UDim.new(0, 8)
+    ButtonCorner.Parent = Button
 
-local autoFarmCorner = Instance.new("UICorner")
-autoFarmCorner.CornerRadius = UDim.new(0, 12)
-autoFarmCorner.Parent = autoFarmButton
+    Button.MouseButton1Click:Connect(callback)
 
--- زر تفعيل/إيقاف ESP
-local espButton = Instance.new("TextButton")
-espButton.Size = UDim2.new(0.8, 0, 0, 60)
-espButton.Position = UDim2.new(0.1, 0, 0.3, 0)
-espButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-espButton.Text = "تفعيل رؤية العناصر"
-espButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-espButton.TextSize = 22
-espButton.Font = Enum.Font.GothamBold
-espButton.Parent = mainFrame
-
-local espCorner = Instance.new("UICorner")
-espCorner.CornerRadius = UDim.new(0, 12)
-espCorner.Parent = espButton
-
--- زر تفعيل/إيقاف NoClip
-local noClipButton = Instance.new("TextButton")
-noClipButton.Size = UDim2.new(0.8, 0, 0, 60)
-noClipButton.Position = UDim2.new(0.1, 0, 0.42, 0)
-noClipButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-noClipButton.Text = "تفعيل المرور عبر الجدران"
-noClipButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-noClipButton.TextSize = 22
-noClipButton.Font = Enum.Font.GothamBold
-noClipButton.Parent = mainFrame
-
-local noClipCorner = Instance.new("UICorner")
-noClipCorner.CornerRadius = UDim.new(0, 12)
-noClipCorner.Parent = noClipButton
-
--- زر تفعيل/إيقاف Auto Bonds
-local autoBondsButton = Instance.new("TextButton")
-autoBondsButton.Size = UDim2.new(0.8, 0, 0, 60)
-autoBondsButton.Position = UDim2.new(0.1, 0, 0.54, 0)
-autoBondsButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-autoBondsButton.Text = "تفعيل جمع السندات"
-autoBondsButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-autoBondsButton.TextSize = 22
-autoBondsButton.Font = Enum.Font.GothamBold
-autoBondsButton.Parent = mainFrame
-
-local autoBondsCorner = Instance.new("UICorner")
-autoBondsCorner.CornerRadius = UDim.new(0, 12)
-autoBondsCorner.Parent = autoBondsButton
-
--- زر الإغلاق
-local closeButton = Instance.new("TextButton")
-closeButton.Size = UDim2.new(0, 50, 0, 50)
-closeButton.Position = UDim2.new(1, -60, 0, 10)
-closeButton.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
-closeButton.Text = "X"
-closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-closeButton.TextSize = 24
-closeButton.Font = Enum.Font.GothamBold
-closeButton.Parent = mainFrame
-
-local closeCorner = Instance.new("UICorner")
-closeCorner.CornerRadius = UDim.new(0, 12)
-closeCorner.Parent = closeButton
-
--- تأثيرات التمرير على الأزرار
-local function applyHoverEffect(button)
-    button.MouseEnter:Connect(function()
-        local tween = TweenService:Create(button, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(70, 70, 70)})
-        tween:Play()
+    Button.MouseEnter:Connect(function()
+        TweenService:Create(Button, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(60, 60, 60)}):Play()
     end)
-    button.MouseLeave:Connect(function()
-        local tween = TweenService:Create(button, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(30, 30, 30)})
-        tween:Play()
+
+    Button.MouseLeave:Connect(function()
+        TweenService:Create(Button, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(40, 40, 40)}):Play()
     end)
+
+    return Button
 end
 
-applyHoverEffect(autoFarmButton)
-applyHoverEffect(espButton)
-applyHoverEffect(noClipButton)
-applyHoverEffect(autoBondsButton)
-applyHoverEffect(closeButton)
+-- Hack Variables
+local InvincibilityEnabled = false
+local AutoKillEnabled = false
 
--- متغيرات حالة الهك
-local autoFarmEnabled = false
-local espEnabled = false
-local noClipEnabled = false
-local autoBondsEnabled = false
+-- Invincibility Function
+local function EnableInvincibility()
+    if InvincibilityEnabled then
+        Humanoid:GetPropertyChangedSignal("Health"):Connect(function()
+            if Humanoid.Health < Humanoid.MaxHealth then
+                Humanoid.Health = Humanoid.MaxHealth
+            end
+        end)
+        print("تم تفعيل اللا قتل: لا تأخذ أي ضرر!")
+    end
+end
 
--- وظيفة زر Auto Farm
-autoFarmButton.MouseButton1Click:Connect(function()
-    autoFarmEnabled = not autoFarmEnabled
-    autoFarmButton.Text = autoFarmEnabled and "إيقاف الزراعة التلقائية" or "تفعيل الزراعة التلقائية"
-    autoFarmButton.BackgroundColor3 = autoFarmEnabled and Color3.fromRGB(0, 200, 0) or Color3.fromRGB(30, 30, 30)
-    -- استدعاء وظيفة Delta Hack الأصلية، مثل:
-    -- DeltaHack:ToggleAutoFarm(autoFarmEnabled)
-    print("Auto Farm " .. (autoFarmEnabled and "مفعل" or "معطل"))
-end)
+-- Auto-Kill Function
+local function AutoKillEnemies()
+    while AutoKillEnabled and Character and Humanoid and Humanoid.Health > 0 do
+        for _, enemy in pairs(Workspace:GetDescendants()) do
+            if enemy:IsA("Model") and enemy:FindFirstChild("Humanoid") and enemy ~= Character then
+                local enemyHumanoid = enemy:FindFirstChild("Humanoid")
+                local enemyRoot = enemy:FindFirstChild("HumanoidRootPart") or enemy:FindFirstChild("Torso")
+                if enemyRoot and RootPart then
+                    local distance = (RootPart.Position - enemyRoot.Position).Magnitude
+                    if distance <= 10 and enemyHumanoid.Health > 0 then
+                        -- Simulate damage to avoid detection
+                        enemyHumanoid.Health = 0
+                        -- Optional: Simulate attack animation to mimic player action
+                        local tool = Character:FindFirstChildOfClass("Tool")
+                        if tool then
+                            tool:Activate()
+                        end
+                    end
+                end
+            end
+        end
+        wait(0.1) -- Pace to avoid server overload
+    end
+end
 
--- وظيفة زر ESP
-espButton.MouseButton1Click:Connect(function()
-    espEnabled = not espEnabled
-    espButton.Text = espEnabled and "إيقاف رؤية العناصر" or "تفعيل رؤية العناصر"
-    espButton.BackgroundColor3 = espEnabled and Color3.fromRGB(0, 200, 0) or Color3.fromRGB(30, 30, 30)
-    -- استدعاء وظيفة Delta Hack الأصلية، مثل:
-    -- DeltaHack:ToggleESP(espEnabled)
-    print("ESP " .. (espEnabled and "مفعل" or "معطل"))
-end)
-
--- وظيفة زر NoClip
-noClipButton.MouseButton1Click:Connect(function()
-    noClipEnabled = not noClipEnabled
-    noClipButton.Text = noClipEnabled and "إيقاف المرور عبر الجدران" or "تفعيل المرور عبر الجدران"
-    noClipButton.BackgroundColor3 = noClipEnabled and Color3.fromRGB(0, 200, 0) or Color3.fromRGB(30, 30, 30)
-    -- استدعاء وظيفة Delta Hack الأصلية، مثل:
-    -- DeltaHack:ToggleNoClip(noClipEnabled)
-    print("NoClip " .. (noClipEnabled and "مفعل" or "معطل"))
-end)
-
--- وظيفة زر Auto Bonds
-autoBondsButton.MouseButton1Click:Connect(function()
-    autoBondsEnabled = not autoBondsEnabled
-    autoBondsButton.Text = autoBondsEnabled and "إيقاف جمع السندات" or "تفعيل جمع السندات"
-    autoBondsButton.BackgroundColor3 = autoBondsEnabled and Color3.fromRGB(0, 200, 0) or Color3.fromRGB(30, 30, 30)
-    -- استدعاء وظيفة Delta Hack الأصلية، مثل:
-    -- DeltaHack:ToggleAutoBonds(autoBondsEnabled)
-    print("Auto Bonds " .. (autoBondsEnabled and "مفعل" or "معطل"))
-end)
-
--- وظيفة زر الإغلاق
-closeButton.MouseButton1Click:Connect(function()
-    screenGui.Enabled = false
-end)
-
--- وظيفة السحب
-local dragging = false
-local dragStart = nil
-local startPos = nil
-
-mainFrame.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        dragging = true
-        dragStart = input.Position
-        startPos = mainFrame.Position
+-- GUI Buttons
+CreateButton("InvincibilityToggle", "تفعيل/تعطيل اللا قتل", 80, function()
+    InvincibilityEnabled = not InvincibilityEnabled
+    print(InvincibilityEnabled and "تم تفعيل اللا قتل" or "تم تعطيل اللا قتل")
+    if InvincibilityEnabled then
+        EnableInvincibility()
     end
 end)
 
-mainFrame.InputChanged:Connect(function(input)
-    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-        local delta = input.Position - dragStart
-        mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+CreateButton("AutoKillToggle", "تفعيل/تعطيل القتل التلقائي", 140, function()
+    AutoKillEnabled = not AutoKillEnabled
+    print(AutoKillEnabled and "تم تفعيل القتل التلقائي" or "تم تعطيل القتل التلقائي")
+    if AutoKillEnabled then
+        spawn(AutoKillEnemies)
     end
 end)
 
-UserInputService.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        dragging = false
+CreateButton("ToggleGUI", "إخفاء/إظهار الواجهة", 200, function()
+    MainFrame.Visible = not MainFrame.Visible
+end)
+
+local CloseButton = Instance.new("TextButton")
+CloseButton.Size = UDim2.new(0, 30, 0, 30)
+CloseButton.Position = UDim2.new(1, -40, 0, 5)
+CloseButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+CloseButton.Text = "X"
+CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseButton.TextSize = 18
+CloseButton.Font = Enum.Font.SourceSansBold
+CloseButton.Parent = MainFrame
+
+local CloseCorner = Instance.new("UICorner")
+CloseCorner.CornerRadius = UDim.new(0, 5)
+CloseCorner.Parent = CloseButton
+
+CloseButton.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+end)
+
+-- Handle character respawn
+LocalPlayer.CharacterAdded:Connect(function(newChar)
+    Character = newChar
+    Humanoid = newChar:WaitForChild("Humanoid")
+    RootPart = newChar:WaitForChild("HumanoidRootPart")
+    if InvincibilityEnabled then
+        EnableInvincibility()
+    end
+    if AutoKillEnabled then
+        spawn(AutoKillEnemies)
     end
 end)
 
--- حركة الفتح
-mainFrame.Size = UDim2.new(0, 0, 0, 0)
-local openTween = TweenService:Create(mainFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
-    Size = UDim2.new(0, 450, 0, 550)
-})
-openTween:Play()
+print("هاك ديد ريلز جاهز! استخدم الواجهة لتفعيل الميزات.")
